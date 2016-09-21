@@ -22,7 +22,6 @@
     <groupId>org.wso2.carbon.scenario</groupId>
     <artifactId>org.wso2.carbon.scenario.sfToSpreadsheet</artifactId>
     <version>1.0.0</version>
-    <packaging>bundle</packaging>
     <name>WSO2 Carbon - Scenario with Salesforce and Spreadsheet</name>
     <url>http://wso2.org</url>
     <properties>
@@ -41,21 +40,6 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>org.wso2.carbon.mediation</groupId>
-            <artifactId>org.wso2.carbon.mediation.initializer</artifactId>
-            <version>${carbon.mediation.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.synapse</groupId>
-            <artifactId>synapse-core</artifactId>
-            <version>${synapse.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.synapse</groupId>
-            <artifactId>synapse-commons</artifactId>
-            <version>${synapse.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.json.wso2</groupId>
             <artifactId>json</artifactId>
             <version>${json.version}</version>
@@ -64,18 +48,6 @@
             <groupId>org.wso2.carbon.mediation</groupId>
             <artifactId>org.wso2.carbon.connector.core</artifactId>
             <version>${carbon.mediation.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.mediation</groupId>
-            <artifactId>org.wso2.carbon.mediation.library.stub</artifactId>
-            <version>${carbon.mediation.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon</groupId>
@@ -121,21 +93,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.wso2.esb</groupId>
-            <artifactId>org.wso2.carbon.esb.common</artifactId>
-            <version>4.8.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.esb.integration</groupId>
             <artifactId>integration-base</artifactId>
             <version>${integration.base.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.mediation</groupId>
-            <artifactId>org.wso2.carbon.inbound</artifactId>
-            <version>4.6.1-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -216,44 +176,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Export-Package>!javax.servlet,
-                            !javax.servlet.http,
-                            org.wso2.carbon.connector.*
-                        </Export-Package>
-                        <Import-Package>!javax.xml.soap,
-                            javax.xml.stream.*; version="1.0.1",
-                            org.apache.axis2.rpc.receivers; version="${axis2.osgi.version.range}",
-                            org.apache.axiom.*; version="${axiom.osgi.version.range}",
-                            org.apache.axis2; version="${axis2.osgi.version.range}",
-                            org.apache.axis2.description; version="${axis2.osgi.version.range}",
-                            org.apache.axis2.engine; version="${axis2.osgi.version.range}",
-                            org.apache.axis2.context; version="${axis2.osgi.version.range}",
-                            org.apache.commons.logging,
-                            org.apache.synapse,
-                            org.apache.synapse.config,
-                            org.apache.synapse.config.xml,
-                            org.apache.synapse.core,
-                            org.apache.synapse.core.axis2,
-                            org.apache.synapse.endpoints.*,
-                            org.apache.synapse.mediators.base,
-                            org.apache.synapse.libraries.*,
-                            org.apache.axis2.transport.base,
-                            org.wso2.carbon.core,
-                            org.wso2.carbon.registry.core.service; version=1.0.1,
-                            javax.xml.soap; version=1.0.0,
-                            *;resolution:=optional
-                        </Import-Package>
-                    </instructions>
-                </configuration>
             </plugin>
         </plugins>
     </build>
