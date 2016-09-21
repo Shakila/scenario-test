@@ -47,7 +47,7 @@ public class ScenarioIntegrationTest extends ScenarioIntegrationTestBase {
     @Test(enabled = true, groups = {"wso2.esb"}, description = "Add invoice test case")
     public void testSample() throws Exception {
         RestResponse<JSONObject> esbRestResponse =
-                sendJsonRestRequest(proxyUrl, "GET", esbRequestHeadersMap);
+                sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "createInvoice.json");
         Thread.sleep(10000);
         logViewer = new LogViewerClient(esbServer.getBackEndUrl(), esbServer.getSessionCookie());
         LogEvent[] logs = logViewer.getAllRemoteSystemLogs();
@@ -59,6 +59,6 @@ public class ScenarioIntegrationTest extends ScenarioIntegrationTestBase {
             }
         }
         Assert.assertEquals(esbRestResponse.getHttpStatusCode(), 200);
-        Assert.assertEquals(success, true, "The invoice is stored in the spreadsheet");
+        Assert.assertEquals(success, true, "Storing the invoice details in the spreadsheet");
     }
 }

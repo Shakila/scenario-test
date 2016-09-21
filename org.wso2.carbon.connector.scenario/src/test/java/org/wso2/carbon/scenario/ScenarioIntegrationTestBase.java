@@ -14,6 +14,12 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ * <p/>
+ * Integration Base package for ESB Extension Scenario.
+ * v1.0.1
+ * <p/>
+ * Integration Base package for ESB Extension Scenario.
+ * v1.0.1
  */
 
 /**
@@ -25,6 +31,8 @@ package org.wso2.carbon.scenario;
 
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.io.FileUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.wso2.carbon.automation.api.clients.proxy.admin.ProxyServiceAdminClient;
 import org.wso2.carbon.automation.api.clients.sequences.SequenceAdminServiceClient;
 import org.wso2.carbon.automation.api.clients.utils.AuthenticateStub;
@@ -36,15 +44,25 @@ import org.wso2.carbon.mediation.library.stub.upload.types.carbon.LibraryFileIte
 import org.wso2.carbon.proxyadmin.stub.ProxyServiceAdminProxyAdminException;
 import org.wso2.carbon.sequences.stub.types.SequenceEditorException;
 import org.wso2.connector.integration.test.base.ConnectorIntegrationTestBase;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import javax.xml.stream.XMLStreamException;
 
 import org.testng.annotations.AfterClass;
+import org.wso2.connector.integration.test.base.RestResponse;
+
 import javax.activation.DataHandler;
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class contains the all methods which are used by this scenario.
@@ -119,9 +137,7 @@ public abstract class ScenarioIntegrationTestBase extends ConnectorIntegrationTe
 
         pathToProxiesDirectory = repoLocation + scenarioProperties.getProperty("proxyDirectoryRelativePath");
         pathToRequestsDirectory = repoLocation + scenarioProperties.getProperty("requestDirectoryRelativePath");
-
         pathToResourcesDirectory = repoLocation + scenarioProperties.getProperty("resourceDirectoryRelativePath");
-
         File zipFolder = new File(pathToResourcesDirectory);
         File[] listOfZIPFiles = zipFolder.listFiles();
         for (File element : listOfZIPFiles) {
@@ -294,25 +310,114 @@ public abstract class ScenarioIntegrationTestBase extends ConnectorIntegrationTe
 
     }
 
+    @Override
+    protected RestResponse<JSONObject> sendJsonRestRequest(String endPoint, String httpMethod, Map<String, String> headersMap, String requestFileName, Map<String, String> parametersMap) throws IOException, JSONException {
+        HttpURLConnection httpConnection = this.writeRequest(endPoint, httpMethod, (byte) 1, headersMap, requestFileName, parametersMap);
+        String responseString = this.readResponse(httpConnection);
+        RestResponse restResponse = new RestResponse();
+        restResponse.setHttpStatusCode(httpConnection.getResponseCode());
+        restResponse.setHeadersMap(httpConnection.getHeaderFields());
+        if (responseString != null) {
+            JSONObject jsonObject = null;
+            if (this.isValidJSON(responseString)) {
+                jsonObject = new JSONObject(responseString);
+            } else {
+                jsonObject = new JSONObject();
+                jsonObject.put("output", responseString);
+            }
+
+            restResponse.setBody(jsonObject);
+        }
+
+        return restResponse;
+    }
+
+    private String readResponse(HttpURLConnection con) throws IOException {
+        InputStream responseStream = null;
+        String responseString = null;
+        if (con.getResponseCode() >= 400) {
+            responseStream = con.getErrorStream();
+        } else {
+            responseStream = con.getInputStream();
+        }
+
+        if (responseStream != null) {
+            StringBuilder stringBuilder = new StringBuilder();
+            byte[] bytes = new byte[1024];
+
+            int len;
+            while ((len = responseStream.read(bytes)) != -1) {
+                stringBuilder.append(new String(bytes, 0, len));
+            }
+
+            if (!stringBuilder.toString().trim().isEmpty()) {
+                responseString = stringBuilder.toString();
+            }
+        }
+
+        return responseString;
+    }
+
+    private HttpURLConnection writeRequest(String endPoint, String httpMethod, byte responseType, Map<String, String> headersMap, String requestFileName, Map<String, String> parametersMap) throws IOException {
+        String requestData = "";
+        if (requestFileName != null && !requestFileName.isEmpty()) {
+            requestData = this.loadRequestFromFile(requestFileName, parametersMap);
+        } else if (responseType == 1) {
+            requestData = "{}";
+        }
+
+        OutputStream output = null;
+        URL url = new URL(endPoint);
+        HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
+        httpConnection.setInstanceFollowRedirects(false);
+        httpConnection.setRequestMethod(httpMethod);
+        Iterator logOrIgnore = headersMap.keySet().iterator();
+
+        while (logOrIgnore.hasNext()) {
+            String key = (String) logOrIgnore.next();
+            httpConnection.setRequestProperty(key, (String) headersMap.get(key));
+        }
+
+        if (httpMethod.equalsIgnoreCase("POST") || httpMethod.equalsIgnoreCase("PUT")) {
+            httpConnection.setDoOutput(true);
+
+            try {
+                output = httpConnection.getOutputStream();
+                output.write(requestData.getBytes(Charset.defaultCharset()));
+            } finally {
+                if (output != null) {
+                    try {
+                        output.close();
+                    } catch (IOException var18) {
+                        this.log.error("Error while closing the connection");
+                    }
+                }
+
+            }
+        }
+
+        return httpConnection;
+    }
+
     /**
-     * Get connector configuration properties.
+     * Get scenario configuration properties.
      *
      * @param fileName Name of the file to load properties.
      * @return {@link Properties} object.
      */
     private Properties getScenarioConfigProperties(String fileName) {
 
-        String connectorConfigFile = null;
+        String scenarioConfigFile = null;
         ProductConstant.init();
         try {
-            connectorConfigFile =
+            scenarioConfigFile =
                     ProductConstant.SYSTEM_TEST_SETTINGS_LOCATION + File.separator + "artifacts" + File.separator
                             + "ESB" + File.separator + "scenario" + File.separator + "config" + File.separator
                             + fileName + ".properties";
-            File connectorPropertyFile = new File(connectorConfigFile);
+            File scenarioPropertyFile = new File(scenarioConfigFile);
             InputStream inputStream = null;
-            if (connectorPropertyFile.exists()) {
-                inputStream = new FileInputStream(connectorPropertyFile);
+            if (scenarioPropertyFile.exists()) {
+                inputStream = new FileInputStream(scenarioPropertyFile);
             }
 
             if (inputStream != null) {
@@ -327,5 +432,97 @@ public abstract class ScenarioIntegrationTestBase extends ConnectorIntegrationTe
         }
 
         return null;
+    }
+
+    private HttpsURLConnection writeRequestHTTPS(String endPoint, String httpMethod, byte responseType, Map<String, String> headersMap, String requestFileName, Map<String, String> parametersMap, boolean isIgnoreHostVerification) throws IOException {
+        String requestData = "";
+        if (requestFileName != null && !requestFileName.isEmpty()) {
+            requestData = this.loadRequestFromFile(requestFileName, parametersMap);
+        } else if (responseType == 1) {
+            requestData = "{}";
+        }
+
+        OutputStream output = null;
+        URL url = new URL(endPoint);
+        HttpsURLConnection httpsConnection = (HttpsURLConnection) url.openConnection();
+        httpsConnection.setInstanceFollowRedirects(false);
+        httpsConnection.setRequestMethod(httpMethod);
+        if (isIgnoreHostVerification) {
+            httpsConnection.setHostnameVerifier(new HostnameVerifier() {
+                public boolean verify(String arg0, SSLSession arg1) {
+                    return true;
+                }
+            });
+        }
+
+        Iterator logOrIgnore = headersMap.keySet().iterator();
+        while (logOrIgnore.hasNext()) {
+            String key = (String) logOrIgnore.next();
+            httpsConnection.setRequestProperty(key, (String) headersMap.get(key));
+        }
+
+        if (httpMethod.equalsIgnoreCase("POST") || httpMethod.equalsIgnoreCase("PUT")) {
+            httpsConnection.setDoOutput(true);
+
+            try {
+                output = httpsConnection.getOutputStream();
+                output.write(requestData.getBytes(Charset.defaultCharset()));
+            } finally {
+                if (output != null) {
+                    try {
+                        output.close();
+                    } catch (IOException var19) {
+                        this.log.error("Error while closing the connection");
+                    }
+                }
+
+            }
+        }
+
+        return httpsConnection;
+    }
+
+    private String loadRequestFromFile(String requestFileName, Map<String, String> parametersMap) throws IOException {
+        String requestFilePath = this.pathToRequestsDirectory + requestFileName;
+        String requestData = this.getFileContent(requestFilePath);
+        Properties prop = (Properties) this.scenarioProperties.clone();
+        if (parametersMap != null) {
+            prop.putAll(parametersMap);
+        }
+
+        String key;
+        for (Matcher matcher = Pattern.compile("%s\\(([A-Za-z0-9]*)\\)", 32).matcher(requestData); matcher.find(); requestData = requestData.replaceAll("%s\\(" + key + "\\)", Matcher.quoteReplacement(prop.getProperty(key)))) {
+            key = matcher.group(1);
+        }
+
+        return requestData;
+    }
+
+    private String getFileContent(String path) throws IOException {
+        String fileContent = null;
+        BufferedInputStream bfist = new BufferedInputStream(new FileInputStream(path));
+
+        try {
+            byte[] ioe = new byte[bfist.available()];
+            bfist.read(ioe);
+            fileContent = new String(ioe);
+        } catch (IOException var8) {
+            this.log.error("Error reading request from file.", var8);
+        } finally {
+            if (bfist != null) {
+                bfist.close();
+            }
+        }
+
+        return fileContent;
+    }
+
+    private boolean isValidJSON(String json) {
+        try {
+            new JSONObject(json);
+            return true;
+        } catch (JSONException var3) {
+            return false;
+        }
     }
 }

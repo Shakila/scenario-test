@@ -1,0 +1,8 @@
+{
+  "sfusername":"%s(sfusername)",
+  "sfpassword":"%s(sfpassword)",
+  "loginUrl":"%s(loginUrl)",
+  "sfstatus":"%s(sfstatus)",
+  "sfdescription":"%s(sfdescription)",
+  "sObjectType":"%s(sObjectType)"
+}

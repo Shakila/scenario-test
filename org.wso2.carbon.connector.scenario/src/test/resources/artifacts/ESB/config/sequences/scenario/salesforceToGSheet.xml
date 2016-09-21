@@ -1,52 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sequence xmlns="http://ws.apache.org/ns/synapse"
-          name="salesforceToGSheet"
-          onError="fault">
-    <property name="clientId"
-              value="xxxx"
-              scope="default"
-              type="STRING"/>
-    <property name="clientSecret"
-              value="xxxx"
-              scope="default"
-              type="STRING"/>
-    <property name="refreshToken"
-              value="xxxx"
-              scope="default"
-              type="STRING"/>
-    <property name="accessToken"
-              value="xxxx"
-              scope="default"
-              type="STRING"/>
-    <property name="apiUrl"
-              value="https://spreadsheets.google.com"
-              scope="default"
-              type="STRING"/>
+<sequence xmlns="http://ws.apache.org/ns/synapse" name="salesforceToGSheet" onError="fault">
+    <property name="clientId" value="xxxx"
+              scope="default" type="STRING"/>
+    <property name="clientSecret" value="xxxx" scope="default" type="STRING"/>
+    <property name="refreshToken" value="xxxx" scope="default" type="STRING"/>
+    <property name="accessToken" value="xxxx"
+              scope="default" type="STRING"/>
+    <property name="apiUrl" value="https://spreadsheets.google.com" scope="default" type="STRING"/>
     <property name="apiVersion" value="3.0" scope="default" type="STRING"/>
-    <property name="spreadsheetTitle"
-              value="testSheet"
-              scope="default"
-              type="STRING"/>
-    <property name="title"
-              value="invoiceWorksheet"
-              scope="default"
-              type="STRING"/>
+    <property name="spreadsheetTitle" value="testSheet" scope="default" type="STRING"/>
+    <property name="worksheetTitle" value="invoiceWorksheet" scope="default" type="STRING"/>
     <property name="rowCount" value="3" scope="default" type="STRING"/>
     <property name="colCount" value="4" scope="default" type="STRING"/>
-    <property xmlns:ns="http://org.apache.synapse/xsd"
-              name="id"
-              expression="json-eval($.data.sobject.Id)"/>
-    <property xmlns:ns="http://org.apache.synapse/xsd"
-              name="name"
-              expression="json-eval($.data.sobject.Name)"/>
-    <property xmlns:ns="http://org.apache.synapse/xsd"
-              name="description"
+    <property xmlns:ns="http://org.apache.synapse/xsd" name="id" expression="json-eval($.data.sobject.Id)"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd" name="name" expression="json-eval($.data.sobject.Name)"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd" name="description"
               expression="json-eval($.data.sobject.Description__c)"/>
-    <property xmlns:ns="http://org.apache.synapse/xsd"
-              name="status"
-              expression="json-eval($.data.sobject.Status__c)"/>
-    <property xmlns:ns="http://org.apache.synapse/xsd"
-              name="createdDate"
+    <property xmlns:ns="http://org.apache.synapse/xsd" name="status" expression="json-eval($.data.sobject.Status__c)"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd" name="createdDate"
               expression="json-eval($.data.sobject.CreatedDate)"/>
     <script language="js">var name = mc.getProperty('name');
         var id = mc.getProperty('id');
@@ -60,7 +31,7 @@
         if(name != null) {
             fieldValues += '"' + name + '"';
         } else {
-            fieldValues += '""';
+        fieldValues += '""';
         }
         fieldValues += ',"id":';
         if(id != null) {
@@ -89,9 +60,7 @@
         fieldValues += "}";
         mc.setProperty('fieldValues', fieldValues);
     </script>
-    <property xmlns:ns="http://org.apache.synapse/xsd"
-              name="fieldValues"
-              expression="$ctx:fieldValues"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd" name="fieldValues" expression="$ctx:fieldValues"/>
     <googlespreadsheet.init>
         <accessToken>{$ctx:accessToken}</accessToken>
         <clientId>{$ctx:clientId}</clientId>
@@ -103,10 +72,8 @@
     <googlespreadsheet.getSpreadsheetByTitle>
         <spreadsheetTitle>{$ctx:spreadsheetTitle}</spreadsheetTitle>
     </googlespreadsheet.getSpreadsheetByTitle>
-    <property xmlns:ns="http://org.apache.synapse/xsd"
-              name="getSpreadsheetByTilteFeed"
-              expression="json-eval($.feed)"/>
-    <script language="js">var feed = mc.getProperty('getSpreadsheetByTilteFeed');
+    <property xmlns:ns="http://org.apache.synapse/xsd" name="getSpreadsheetByTitleFeed" expression="json-eval($.feed)"/>
+    <script language="js">var feed = mc.getProperty('getSpreadsheetByTitleFeed');
         if(feed != null) {
             var feedObject = eval("("+feed+")");
             var totalResults = feedObject["totalResults"];
@@ -136,9 +103,7 @@
             mc.setProperty('getSpreadsheetByTitleTotalResults', totalResults);
         }
     </script>
-    <filter xmlns:ns="http://org.apache.synapse/xsd"
-            source="$ctx:getSpreadsheetByTitleTotalResults = 0"
-            regex="true">
+    <filter xmlns:ns="http://org.apache.synapse/xsd" source="$ctx:getSpreadsheetByTitleTotalResults = 0" regex="true">
         <then>
             <property name="message" value="Error: The spreadsheet is not found"/>
             <sequence key="responsesequence"/>
@@ -152,7 +117,7 @@
                     expression="fn:concat('Bearer ',$ctx:uri.var.accessToken)"/>
             <googlespreadsheet.getWorksheetByTitle>
                 <key>{$ctx:spreadsheetKey}</key>
-                <worksheetTitle>{$ctx:title}</worksheetTitle>
+                <worksheetTitle>{$ctx:worksheetTitle}</worksheetTitle>
             </googlespreadsheet.getWorksheetByTitle>
             <property name="getWorksheetByTitleFeed" expression="json-eval($.feed)"/>
             <script language="js">var feed = mc.getProperty('getWorksheetByTitleFeed');
@@ -164,7 +129,7 @@
                         var isExists = false;
                         if(totalResults &gt; 1) {
                             for (i = 0; i &lt; entryObject.length; i++) {
-                                if(entryObject[i]["title"]["$"] == mc.getProperty("title")) {
+                                if(entryObject[i]["title"]["$"] == mc.getProperty("worksheetTitle")) {
                                     isExists = true;
                                     break;
                                 }
@@ -184,7 +149,7 @@
                             expression="fn:concat('Bearer ',$ctx:uri.var.accessToken)"/>
                     <googlespreadsheet.addWorksheet>
                         <key>{$ctx:spreadsheetKey}</key>
-                        <title>{$ctx:title}</title>
+                        <title>{$ctx:worksheetTitle}</title>
                         <rowCount>{$ctx:rowCount}</rowCount>
                         <colCount>{$ctx:colCount}</colCount>
                     </googlespreadsheet.addWorksheet>
@@ -198,7 +163,7 @@
                         </then>
                         <else>
                             <property name="message"
-                                      expression="fn:concat('New spreadsheet ', $ctx:title,' is added. To insert data into a row, Please add a row with column names (Name, Id, Description, Status, CreatedDate)')"/>
+                                      expression="fn:concat('New spreadsheet ', $ctx:worksheetTitle,' is added. To insert data into a row, Please add a row with column names (Name, Id, Description, Status, CreatedDate)')"/>
                             <sequence key="responsesequence"/>
                         </else>
                     </filter>
@@ -221,10 +186,10 @@
                                 if(totalResults == 1) {
                                     mc.setProperty('worksheetId', '1');
                                 }
-                            if(totalResults &gt; 1) {
-                                var i = 0;
+                                if(totalResults &gt; 1) {
+                                    var i = 0;
                                     for (i = 0; i &lt; entryObject.length; i++) {
-                                        if(entryObject[i]["title"]["$"] == mc.getProperty("title")) {
+                                        if(entryObject[i]["title"]["$"] == mc.getProperty("worksheetTitle")) {
                                             var wId = ("" + (i + 1)).replace(".0", "");
                                             mc.setProperty('worksheetId', wId);
                                             break;

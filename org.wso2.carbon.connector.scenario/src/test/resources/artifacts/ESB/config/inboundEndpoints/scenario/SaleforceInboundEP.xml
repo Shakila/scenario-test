@@ -14,10 +14,10 @@
         <parameter name="connection.salesforce.waitTime">10000</parameter>
         <parameter name="connection.salesforce.packageName">cometd</parameter>
         <parameter name="coordination">true</parameter>
-        <parameter name="connection.salesforce.password">password</parameter>
+        <parameter name="connection.salesforce.password">xxxx</parameter>
         <parameter name="interval">10</parameter>
         <parameter name="connection.salesforce.salesforceObject">InvoStatementUpdates</parameter>
-        <parameter name="connection.salesforce.userName">username</parameter>
+        <parameter name="connection.salesforce.userName">xxxx</parameter>
         <parameter name="connection.salesforce.loginEndpoint">https://login.salesforce.com</parameter>
         <parameter name="connection.salesforce.packageVersion">35.0</parameter>
     </parameters>

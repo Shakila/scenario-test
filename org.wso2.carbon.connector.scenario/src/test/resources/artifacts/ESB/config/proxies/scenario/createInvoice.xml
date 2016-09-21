@@ -25,17 +25,23 @@
        startOnLoad="true">
     <target>
         <inSequence>
+            <property name="username" expression="json-eval($.sfusername)"/>
+            <property name="password" expression="json-eval($.sfpassword)"/>
+            <property name="loginUrl" expression="json-eval($.loginUrl)"/>
+            <property name="sfstatus" expression="json-eval($.sfstatus)"/>
+            <property name="sfdescription" expression="json-eval($.sfdescription)"/>
+            <property name="sObjectType" expression="json-eval($.sObjectType)"/>
             <salesforce.init>
-                <username>xxxx</username>
-                <password>xxxx</password>
-                <loginUrl>https://login.salesforce.com/services/Soap/u/36.0</loginUrl>
+                <username>{$ctx:username}</username>
+                <password>{$ctx:password}</password>
+                <loginUrl>{$ctx:loginUrl}</loginUrl>
             </salesforce.init>
             <payloadFactory media-type="xml">
                 <format>
-                    <sfdc:sObjects xmlns:sfdc="sfdc" type="Invoice_Statement__c">
+                    <sfdc:sObjects xmlns:sfdc="sfdc" type="$ctx:sObjectType">
                         <sfdc:sObject>
-                            <sfdc:Status__c>Open</sfdc:Status__c>
-                            <sfdc:Description__c>Professional Services Rendered.</sfdc:Description__c>
+                            <sfdc:Status__c>$ctx:sfstatus</sfdc:Status__c>
+                            <sfdc:Description__c>$ctx:sfdescription</sfdc:Description__c>
                         </sfdc:sObject>
                     </sfdc:sObjects>
                 </format>
