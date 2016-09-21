@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inboundEndpoint xmlns="http://ws.apache.org/ns/synapse"
+                 name="SaleforceInboundEP"
+                 sequence="salesforceToGSheet"
+                 onError="fault"
+                 class="org.wso2.carbon.inbound.salesforce.poll.SalesforceStreamData"
+                 suspend="false">
+    <parameters>
+        <parameter name="inbound.behavior">polling</parameter>
+        <parameter name="connection.salesforce.readTimeout">120000</parameter>
+        <parameter name="connection.salesforce.soapApiVersion">22.0/</parameter>
+        <parameter name="connection.salesforce.connectionTimeout">20000</parameter>
+        <parameter name="sequential">true</parameter>
+        <parameter name="connection.salesforce.waitTime">10000</parameter>
+        <parameter name="connection.salesforce.packageName">cometd</parameter>
+        <parameter name="coordination">true</parameter>
+        <parameter name="connection.salesforce.password">password</parameter>
+        <parameter name="interval">10</parameter>
+        <parameter name="connection.salesforce.salesforceObject">InvoStatementUpdates</parameter>
+        <parameter name="connection.salesforce.userName">username</parameter>
+        <parameter name="connection.salesforce.loginEndpoint">https://login.salesforce.com</parameter>
+        <parameter name="connection.salesforce.packageVersion">35.0</parameter>
+    </parameters>
+</inboundEndpoint>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence xmlns="http://ws.apache.org/ns/synapse"
+          name="salesforceToGSheet"
+          onError="fault">
+    <property name="clientId"
+              value="xxxx"
+              scope="default"
+              type="STRING"/>
+    <property name="clientSecret"
+              value="xxxx"
+              scope="default"
+              type="STRING"/>
+    <property name="refreshToken"
+              value="xxxx"
+              scope="default"
+              type="STRING"/>
+    <property name="accessToken"
+              value="xxxx"
+              scope="default"
+              type="STRING"/>
+    <property name="apiUrl"
+              value="https://spreadsheets.google.com"
+              scope="default"
+              type="STRING"/>
+    <property name="apiVersion" value="3.0" scope="default" type="STRING"/>
+    <property name="spreadsheetTitle"
+              value="testSheet"
+              scope="default"
+              type="STRING"/>
+    <property name="title"
+              value="invoiceWorksheet"
+              scope="default"
+              type="STRING"/>
+    <property name="rowCount" value="3" scope="default" type="STRING"/>
+    <property name="colCount" value="4" scope="default" type="STRING"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd"
+              name="id"
+              expression="json-eval($.data.sobject.Id)"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd"
+              name="name"
+              expression="json-eval($.data.sobject.Name)"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd"
+              name="description"
+              expression="json-eval($.data.sobject.Description__c)"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd"
+              name="status"
+              expression="json-eval($.data.sobject.Status__c)"/>
+    <property xmlns:ns="http://org.apache.synapse/xsd"
+              name="createdDate"
+              expression="json-eval($.data.sobject.CreatedDate)"/>
+    <script language="js">var name = mc.getProperty('name');
+        var id = mc.getProperty('id');
+        var description = mc.getProperty('description');
+        var createdDate = mc.getProperty('createdDate');
+        var status = mc.getProperty('status');
+        var fieldValues = "{";
+        fieldValues += '"name":';
+        var fieldValues11 = "name";
+        mc.setProperty('fieldValues11', name);
+        if(name != null) {
+            fieldValues += '"' + name + '"';
+        } else {
+            fieldValues += '""';
+        }
+        fieldValues += ',"id":';
+        if(id != null) {
+            fieldValues += '"' + id + '"';
+        } else {
+            fieldValues += '""';
+        }
+        fieldValues += ',"description":';
+        if(description != null) {
+            fieldValues += '"' + description + '"';
+        } else {
+            fieldValues += '""';
+        }
+        fieldValues += ',"status":';
+        if(status != null) {
+            fieldValues += '"' + status + '"';
+        } else {
+            fieldValues += '""';
+        }
+        fieldValues += ',"createddate":';
+        if(createdDate != null) {
+            fieldValues += '"' + createdDate + '"';
+        } else {
+            fieldValues += '""';
+        }
+        fieldValues += "}";
+        mc.setProperty('fieldValues', fieldValues);
+    </script>
+    <property xmlns:ns="http://org.apache.synapse/xsd"
+              name="fieldValues"
+              expression="$ctx:fieldValues"/>
+    <googlespreadsheet.init>
+        <accessToken>{$ctx:accessToken}</accessToken>
+        <clientId>{$ctx:clientId}</clientId>
+        <clientSecret>{$ctx:clientSecret}</clientSecret>
+        <refreshToken>{$ctx:refreshToken}</refreshToken>
+        <accessTokenRegistryPath>{$ctx:accessTokenRegistryPath}</accessTokenRegistryPath>
+        <apiUrl>{$ctx:apiUrl}</apiUrl>
+    </googlespreadsheet.init>
+    <googlespreadsheet.getSpreadsheetByTitle>
+        <spreadsheetTitle>{$ctx:spreadsheetTitle}</spreadsheetTitle>
+    </googlespreadsheet.getSpreadsheetByTitle>
+    <property xmlns:ns="http://org.apache.synapse/xsd"
+              name="getSpreadsheetByTilteFeed"
+              expression="json-eval($.feed)"/>
+    <script language="js">var feed = mc.getProperty('getSpreadsheetByTilteFeed');
+        if(feed != null) {
+            var feedObject = eval("("+feed+")");
+            var totalResults = feedObject["totalResults"];
+            entryObject = feedObject["entry"];
+            if(entryObject != null) {
+                var isExists = false;
+                if(totalResults == 1) {
+                    splitted = entryObject["id"].split("/");
+                    var spreadsheetKey = splitted[splitted.length-1];
+                    mc.setProperty('spreadsheetKey', spreadsheetKey);
+                }
+                if(totalResults &gt; 1) {
+                    for (i = 0; i &lt; entryObject.length; i++) {
+                        if(entryObject[i]["title"]["$"] == mc.getProperty("spreadsheetTitle")) {
+                            isExists = true;
+                            splitted = entryObject[i]["id"].split("/");
+                            var spreadsheetKey = splitted[splitted.length-1];
+                            mc.setProperty('spreadsheetKey', spreadsheetKey);
+                            break;
+                        }
+                    }
+                    if(!isExists) {
+                        totalResults = 0;
+                    }
+                }
+            }
+            mc.setProperty('getSpreadsheetByTitleTotalResults', totalResults);
+        }
+    </script>
+    <filter xmlns:ns="http://org.apache.synapse/xsd"
+            source="$ctx:getSpreadsheetByTitleTotalResults = 0"
+            regex="true">
+        <then>
+            <property name="message" value="Error: The spreadsheet is not found"/>
+            <sequence key="responsesequence"/>
+        </then>
+    </filter>
+    <filter xmlns:ns="http://org.apache.synapse/xsd"
+            xpath="(not($ctx:spreadsheetKey = '' or (not(string($ctx:spreadsheetKey)))))">
+        <then>
+            <header name="Authorization"
+                    scope="transport"
+                    expression="fn:concat('Bearer ',$ctx:uri.var.accessToken)"/>
+            <googlespreadsheet.getWorksheetByTitle>
+                <key>{$ctx:spreadsheetKey}</key>
+                <worksheetTitle>{$ctx:title}</worksheetTitle>
+            </googlespreadsheet.getWorksheetByTitle>
+            <property name="getWorksheetByTitleFeed" expression="json-eval($.feed)"/>
+            <script language="js">var feed = mc.getProperty('getWorksheetByTitleFeed');
+                if(feed != null) {
+                    var feedObject = eval("("+feed+")");
+                    var totalResults = feedObject["totalResults"];
+                    entryObject = feedObject["entry"];
+                    if(feedObject["entry"] != null) {
+                        var isExists = false;
+                        if(totalResults &gt; 1) {
+                            for (i = 0; i &lt; entryObject.length; i++) {
+                                if(entryObject[i]["title"]["$"] == mc.getProperty("title")) {
+                                    isExists = true;
+                                    break;
+                                }
+                            }
+                            if(!isExists) {
+                                totalResults = 0;
+                            }
+                        }
+                    }
+                    mc.setProperty('getWorksheetByTitleTotalResults', totalResults);
+                }
+            </script>
+            <filter source="$ctx:getWorksheetByTitleTotalResults = 0" regex="true">
+                <then>
+                    <header name="Authorization"
+                            scope="transport"
+                            expression="fn:concat('Bearer ',$ctx:uri.var.accessToken)"/>
+                    <googlespreadsheet.addWorksheet>
+                        <key>{$ctx:spreadsheetKey}</key>
+                        <title>{$ctx:title}</title>
+                        <rowCount>{$ctx:rowCount}</rowCount>
+                        <colCount>{$ctx:colCount}</colCount>
+                    </googlespreadsheet.addWorksheet>
+                    <property name="addWorksheetStatusCode" expression="$axis2:HTTP_SC"/>
+                    <filter source="$ctx:addWorksheetStatusCode != 201" regex="true">
+                        <then>
+                            <property name="errorMessage" expression="//errors"/>
+                            <property name="message"
+                                      expression="fn:concat('Error: Unable to create the worksheet (', $ctx:errorMessage,')')"/>
+                            <sequence key="responsesequence"/>
+                        </then>
+                        <else>
+                            <property name="message"
+                                      expression="fn:concat('New spreadsheet ', $ctx:title,' is added. To insert data into a row, Please add a row with column names (Name, Id, Description, Status, CreatedDate)')"/>
+                            <sequence key="responsesequence"/>
+                        </else>
+                    </filter>
+                </then>
+                <else>
+                    <header name="Authorization"
+                            scope="transport"
+                            expression="fn:concat('Bearer ',$ctx:uri.var.accessToken)"/>
+                    <googlespreadsheet.listWorksheets>
+                        <key>{$ctx:spreadsheetKey}</key>
+                    </googlespreadsheet.listWorksheets>
+                    <property name="getWorksheetByTitleFeed" expression="json-eval($.feed)"/>
+                    <script language="js">
+                        var feed = mc.getProperty('getWorksheetByTitleFeed');
+                        if(feed != null) {
+                            var feedObject = eval("("+feed+")");
+                            var totalResults = feedObject["totalResults"];
+                            entryObject = feedObject["entry"];
+                            if(feedObject["entry"] != null) {
+                                if(totalResults == 1) {
+                                    mc.setProperty('worksheetId', '1');
+                                }
+                            if(totalResults &gt; 1) {
+                                var i = 0;
+                                    for (i = 0; i &lt; entryObject.length; i++) {
+                                        if(entryObject[i]["title"]["$"] == mc.getProperty("title")) {
+                                            var wId = ("" + (i + 1)).replace(".0", "");
+                                            mc.setProperty('worksheetId', wId);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    </script>
+                    <filter xpath="(not($ctx:worksheetId = '' or (not(string($ctx:worksheetId)))))">
+                        <then>
+                            <header name="Authorization"
+                                    scope="transport"
+                                    expression="fn:concat('Bearer ',$ctx:uri.var.accessToken)"/>
+                            <googlespreadsheet.insertRows>
+                                <key>{$ctx:spreadsheetKey}</key>
+                                <worksheetId>{$ctx:worksheetId}</worksheetId>
+                                <fieldValues>{$ctx:fieldValues}</fieldValues>
+                            </googlespreadsheet.insertRows>
+                            <property name="insertRowsStatusCode" expression="$axis2:HTTP_SC"/>
+                            <filter source="$ctx:insertRowsStatusCode != 201" regex="true">
+                                <then>
+                                    <property name="errorMessage" expression="//errors"/>
+                                    <property name="message"
+                                              expression="fn:concat('Error: Unable to insert the row (', $ctx:errorMessage,')')"/>
+                                    <sequence key="responsesequence"/>
+                                </then>
+                                <else>
+                                    <property name="message" value="Success: Successfully added the row"/>
+                                    <sequence key="responsesequence"/>
+                                </else>
+                            </filter>
+                        </then>
+                    </filter>
+                </else>
+            </filter>
+        </then>
+        <else>
+            <property name="message" value="Error: The key is null"/>
+            <sequence key="responsesequence"/>
+        </else>
+    </filter>
+</sequence>

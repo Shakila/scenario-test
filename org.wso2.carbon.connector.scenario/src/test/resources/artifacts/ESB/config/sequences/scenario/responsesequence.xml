@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence xmlns="http://ws.apache.org/ns/synapse" name="responsesequence">
+    <property name="messageType" value="application/json" scope="axis2"/>
+    <payloadFactory media-type="json">
+        <format>
+            {
+                "Response":{
+                    "process":"enterDataToSpreadsheet",
+                    "activityResponse":"$1"
+                }
+            }
+        </format>
+        <args>
+            <arg xmlns:ns="http://org.apache.synapse/xsd"
+                 evaluator="xml"
+                 expression="get-property('message')"/>
+        </args>
+    </payloadFactory>
+    <send/>
+</sequence>
