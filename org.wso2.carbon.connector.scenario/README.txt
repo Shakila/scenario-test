@@ -75,7 +75,7 @@ Steps to follow in setting integration test.
         iii) loginUrl             -    Use login URL of the salesforce account.
         iv)  sfstatus             -    Use the status of the invoice e.g: Open, Closed, Negotiating & Pending .
         v)   sfdescription        -    Use description about that invoice entry.
-        vi)  sObjectType          -    Use the type of the sObject created in step 8 i.
+        vi)  sObjectType          -    Use the type of the sObject created in step 8 ii.
 
  10. Navigate to "{SCENARIO_HOME}/" and run the following command.
        $ mvn clean install
